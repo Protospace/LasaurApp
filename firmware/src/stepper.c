@@ -58,7 +58,6 @@
 #define CYCLES_PER_MICROSECOND (F_CPU/1000000)  //16000000/1000000 = 16
 #define CYCLES_PER_ACCELERATION_TICK (F_CPU/ACCELERATION_TICKS_PER_SECOND)  // 16MHz/100 = 160000
 
-
 static int32_t stepper_position[3];  // real-time position in absolute steps
 static block_t *current_block;  // A pointer to the block currently being traced
 
@@ -466,23 +465,30 @@ static void adjust_speed( uint32_t steps_per_minute ) {
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
   // beam dynamics
-  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
-                               ((float)steps_per_minute/(float)current_block->nominal_rate);
+  uint8_t adjusted_intensity = current_block->nominal_laser_intensity *((float)steps_per_minute/(float)current_block->nominal_rate);
   uint8_t constrained_intensity = max(adjusted_intensity, 0);
   control_laser_intensity(constrained_intensity);
 
   // depending on intensity adapt PWM freq
   // assuming: TCCR0A = _BV(COM0A1) | _BV(WGM00);  // phase correct PWM mode
-  if (constrained_intensity > 40) {
+  
+/* We removed this as it is not appropriate for our implementation of PWM power control, talk to Danny. 
+
+ if (constrained_intensity > 30) { //was 40
     // set PWM freq to 3.9kHz
     TCCR0B = _BV(CS01);
-  } else if (constrained_intensity > 10) {
+  } else if (constrained_intensity > 5) { //was 10
     // set PWM freq to 489Hz
     TCCR0B = _BV(CS01) | _BV(CS00);
   } else {
     // set PWM freq to 122Hz
     TCCR0B = _BV(CS02); 
   }
+  */
+
+  
+  
+  
 }
 
 
@@ -496,6 +502,7 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
   uint8_t limit_bits;
   uint8_t x_overshoot_count = 6;
   uint8_t y_overshoot_count = 6;
+  uint8_t z_overshoot_count = 6;
   
   if (x_axis) { out_bits |= (1<<X_STEP_BIT); }
   if (y_axis) { out_bits |= (1<<Y_STEP_BIT); }
@@ -534,14 +541,14 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
         y_overshoot_count--;
       }        
     }
-    // if (z_axis && !(limit_bits & (1<<Z1_LIMIT_BIT))) {
-    //   if(z_overshoot_count == 0) {
-    //     z_axis = false;
-    //     out_bits ^= (1<<Z_STEP_BIT);
-    //   } else {
-    //     z_overshoot_count--;
-    //   }        
-    // }
+	if (z_axis && !(limit_bits & (1<<Z1_LIMIT_BIT))) {
+		if(z_overshoot_count == 0) {
+			z_axis = false;
+			out_bits ^= (1<<Z_STEP_BIT);
+		} else {
+			z_overshoot_count--;
+		}        
+	}
     if(x_axis || y_axis || z_axis) {
         // step all axes still in out_bits
         STEPPING_PORT |= out_bits & STEPPING_MASK;
@@ -565,10 +572,9 @@ static void leave_limit_switch(bool x, bool y, bool z) {
 }
 
 void stepper_homing_cycle() {
-  stepper_synchronize();  
-  // home the x and y axis
-  approach_limit_switch(true, true, false);
-  leave_limit_switch(true, true, false);
+	stepper_synchronize();  
+
+	// home the x and y axis
+	approach_limit_switch(true, true, true);
+	leave_limit_switch(true, true, true);
 }
-
-
