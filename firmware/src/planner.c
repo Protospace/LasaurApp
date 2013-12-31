@@ -128,8 +128,7 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
   block->nominal_rate = ceil(block->step_event_count * inverse_minute); // always > 0
   
   // compute the acceleration rate for this block. (step/min/acceleration_tick)
-  block->rate_delta = ceil( block->step_event_count * inverse_millimeters 
-                            * CONFIG_ACCELERATION / (60 * ACCELERATION_TICKS_PER_SECOND) );
+  block->rate_delta = ceil( block->step_event_count * inverse_millimeters * CONFIG_ACCELERATION / (60 * ACCELERATION_TICKS_PER_SECOND) );
 
 
   //// acceleeration manager calculations
@@ -161,8 +160,7 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
       if (cos_theta > -0.95) {
         // any junction not close to neither 0 and 180 degree -> compute vmax
         double sin_theta_d2 = sqrt(0.5*(1.0-cos_theta)); // Trig half angle identity. Always positive.
-        vmax_junction = min( vmax_junction, sqrt( CONFIG_ACCELERATION * CONFIG_JUNCTION_DEVIATION 
-                                                  * sin_theta_d2/(1.0-sin_theta_d2) ) );
+        vmax_junction = min( vmax_junction, sqrt( CONFIG_ACCELERATION * CONFIG_JUNCTION_DEVIATION * sin_theta_d2/(1.0-sin_theta_d2) ) );
       }
     }
   }
