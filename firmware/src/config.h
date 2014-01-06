@@ -34,13 +34,14 @@
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
-#define CONFIG_X_STEPS_PER_MM 39.37007874 //microsteps/mm
+// Protospace steps/mm chosen by science (December 31, 2013)
+#define CONFIG_X_STEPS_PER_MM 39.379123 //microsteps/mm
 #ifndef NANOTEC_STEPPER_09
-  #define CONFIG_Y_STEPS_PER_MM 39.37007874 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 39.379123 //microsteps/mm
 #else
   #define CONFIG_Y_STEPS_PER_MM 39.37007874 //microsteps/mm
 #endif
-#define CONFIG_Z_STEPS_PER_MM 1000 //microsteps/mm
+#define CONFIG_Z_STEPS_PER_MM 1000.0 //microsteps/mm
 
 #define CONFIG_PULSE_MICROSECONDS 5
 #define CONFIG_FEEDRATE 2000.0 // in millimeters per minute
