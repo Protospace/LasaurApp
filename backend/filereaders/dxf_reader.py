@@ -33,8 +33,7 @@ class DXFReader:
         # parsed path data, paths by color
         # {'#ff0000': [[path0, path1, ..], [path0, ..], ..]}
         # Each path is a list of vertices which is a list of two floats.        
-        self.boundarys = {'#000000':[]}
-        self.black_boundarys = self.boundarys['#000000']
+        self.boundarys = {}
 
         # Assume metric by default
         self.metricflag = 1
@@ -71,7 +70,7 @@ class DXFReader:
 
         self.infile.close()
         print "Done!"
-        return {'boundarys':self.boundarys}
+        return {'boundarys': self.boundarys}
 
     # Read through all of the drawing variables
     def do_header(self):
@@ -215,7 +214,6 @@ class DXFReader:
             y1 = y1*25.4        
             x2 = x2*25.4
             y2 = y2*25.4        
-        self.black_boundarys.append([[x1,y1],[x2,y2]])
 
     def do_circle(self):
         cx = float(self.readgroup(10))
@@ -260,7 +258,6 @@ class DXFReader:
     def do_lwpolyline(self):
         numverts = int(self.readgroup(90))
         path = []
-        self.black_boundarys.append(path)
         for i in range(0,numverts):
             x = float(self.readgroup(10))
             y = float(self.readgroup(20))
