@@ -122,7 +122,7 @@ class DXFReader:
     def do_table_layer(self):
         layer_name = None
         layer_color = None
-        layer_plotting = 1
+        layer_plotting = True
 
         while True:
             self.readonepair()
@@ -130,11 +130,12 @@ class DXFReader:
 
             if self.dxfcode == 2: layer_name = self.line
             elif self.dxfcode == 62: layer_color = int(self.line)
-            elif self.dxfcode == 290: layer_plotting = int(self.line)
+            elif self.dxfcode == 290: layer_plotting = boolean(self.line)
 
-        if layer_color < 0:
+        if layer_plotting and layer_color < 0:
             layer_color = -layer_color
-            layer_plotting = 0
+            layer_plotting = False
+
         layer_color = "#" + self.__DXF_COLORS[layer_color]
         self.layers[layer_name] = {"color": layer_color, "plot": layer_plotting}
 
