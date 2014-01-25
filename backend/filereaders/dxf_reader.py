@@ -191,6 +191,7 @@ class DXFReader:
                 self.readtocode(0)
             if self.dxfcode == 0 and self.line == "ENDSEC": break
 
+            path = None
             entity_type = self.line
             entity_line = self.linecount
 
