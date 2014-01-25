@@ -227,6 +227,8 @@ class DXFReader:
             x2 = x2*25.4
             y2 = y2*25.4        
 
+        return [[x1,y1],[x2,y2]]
+
     def do_circle(self):
         cx = float(self.readgroup(10))
         cy = float(self.readgroup(20))
@@ -284,6 +286,8 @@ class DXFReader:
 
         if poly_flags & self.__LWPOLY_CLOSED:
             path.append(path[0])
+
+        return path
 
     def complain_invalid(self):
         print "Invalid element '" + self.line + "' on line ", self.linecount
