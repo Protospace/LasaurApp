@@ -359,7 +359,7 @@ class DXFReader:
                 r = self._distance(p0, p1) / (2.0 * math.sin(0.5 * b))
 
                 large_arc_flag = int(node[0] >= math.pi)
-                sweep_flag = int(r >c 0.0)
+                sweep_flag = int(r > 0.0)
 
                 self.addArc(path, p0[0], p0[1], r, r, 0, large_arc_flag, sweep_flag, p1[0], p1[1])
             elif last_was_arc:
