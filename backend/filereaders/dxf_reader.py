@@ -3,7 +3,7 @@
 # Released under the GNU GPL3 license.
 
 
-__author__ = 'David S. Touretzky, Stefan Hechenberger <stefan@nortd.com>'
+__author__ = 'David S. Touretzky, Stefan Hechenberger <stefan@nortd.com>, Kevin Loney <kevin.loney@brainsinjars.com>'
 
 
 import math
