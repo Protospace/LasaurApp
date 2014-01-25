@@ -7,10 +7,8 @@ __author__ = 'David S. Touretzky, Stefan Hechenberger <stefan@nortd.com>, Kevin 
 
 
 import math
+import logging
 import StringIO
-
-
-
 
 class DXFReader:
     """Parse very simple DXF files with lines, arcs, and lwpolyline.
@@ -26,6 +24,8 @@ class DXFReader:
     __DXF_VERSIONS = {"AC1006":"R10","AC1009":"R11 and R12","AC1012":"R13","AC1014":"R14","AC1015":"AutoCAD 2000","AC1018":"AutoCAD 2004","AC1021":"AutoCAD 2007","AC1024":"AutoCAD 2010","AC1027":"AutoCAD 2013"}
 
     def __init__(self, tolerance):
+        self.__log = logging.getLogger("dxf_reader")
+
         # tolerance settings, used in tessalation, path simplification, etc         
         self.tolerance = tolerance
         self.tolerance2 = tolerance**2
@@ -66,10 +66,10 @@ class DXFReader:
             elif self.line == "EOF": break
             else: pass
 
-        print self.layers
+        self.__log.debug(self.layers)
 
         self.infile.close()
-        print "Done!"
+        self.__log.info('Done')
         return {'boundarys': self.boundarys}
 
     # Read through all of the drawing variables
@@ -109,12 +109,13 @@ class DXFReader:
         if self.headers["$MEASUREMENT"]:
             self.metricflag = int(self.headers["$MEASUREMENT"][1])
             if self.metricflag == 0:
-                print "Found imperial units indicator -> converting to mm."
+                self.__log.info("Found imperial units indicator, converting to mm.")
             elif self.metricflag != 1:
-                print "Invalid $MEASUREMENT value! Assuming metric units."
+                self.__log.warn("Invalid $MEASUREMENT value! Assuming metric units.")
                 self.metricflag = 1
             else:
-                print "Found metric units indicator."
+                self.__log.info("Found metric units indicator.")
+
 
     # Read through all layer data
     def do_tables(self):
@@ -187,8 +188,7 @@ class DXFReader:
         self.linecount += 1
         self.line = self.infile.readline()
         if not self.line: 
-            print "Premature end of file!"
-            print "Something is wrong. Sorry!"
+            self.__log.error("Premature end of file!")
             raise ValueError
         self.line = self.line.rstrip()
 
