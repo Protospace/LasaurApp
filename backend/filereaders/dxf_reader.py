@@ -499,31 +499,18 @@ class DXFReader:
             return p[0:2]
 
         def _recursiveSpline(level, t1, p1, t2, p2):
-            def _vectorDot(u, v):
-                return sum([a*b for a, b in zip(u, v)])
-
-            def _vectorSubtract(u, v):
-                return [u - v for u,v in zip(u, v)]
-
-            def _distance2(u, v):
-                t = _vectorSubtract(u, v)
-                return _vectorDot(t, t)
-
-            def _distance(u, v):
-                return math.sqrt(_distance2(u, v))
-
             def _distPointSegment(p, u, v):
-                l2 = _distance2(u, v)
+                l2 = self._distance2(u, v)
                 if l2 == 0.0:
-                    return _distance(p, u)
+                    return self._distance(p, u)
 
-                t = _vectorDot(_vectorSubtract(p, u), _vectorSubtract(v, u)) / l2
+                t = self._vectorDot(self._vectorSub(p, u), self._vectorSub(v, u)) / l2
                 if t < 0.0:
-                    return _distance(p, u)
+                    return self._distance(p, u)
                 if t > 1.0:
-                    return _distance(p, v)
+                    return self._distance(p, v)
 
-                return _distance(p, [u + t * (v - u) for u,v in zip(u, v)])
+                return self._distance(p, [u + t * (v - u) for u,v in zip(u, v)])
 
             if level > 18:
                 return
@@ -555,3 +542,15 @@ class DXFReader:
 
         path.append(pt_prev)
 
+    def _vectorDot(self, u, v):
+        return sum([a*b for a, b in zip(u, v)])
+
+    def _vectorSub(self, u, v):
+        return [u - v for u,v in zip(u, v)]
+
+    def _distance2(self, u, v):
+        t = self._vectorSub(u, v)
+        return self._vectorDot(t, t)
+
+    def _distance(self, u, v):
+        return math.sqrt(self._distance2(u, v))
