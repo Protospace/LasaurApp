@@ -204,6 +204,16 @@ class DXFReader:
     ################
     # Translate each type of entity (line, circle, arc, lwpolyline)
 
+    def do_point(self):
+        x = float(self.readgroup(10))
+        y = float(self.readgroup(20))
+
+        if self.metricflag == 0:
+            x = x*25.4
+            y = y*25.4
+
+        return [[x,y]]
+
     def do_line(self):
         x1 = float(self.readgroup(10))
         y1 = float(self.readgroup(20))
