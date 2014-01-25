@@ -25,6 +25,12 @@ class DXFReader:
 
     __LWPOLY_CLOSED = 0x01
 
+    __SPLINE_CLOSED = 0x01
+    __SPLINE_PERIODIC = 0x02
+    __SPLINE_RATIONAL = 0x04
+    __SPLINE_PLANAR = 0x08
+    __SPLINE_LINEAR = 0x10
+
     def __init__(self, tolerance):
         self.__log = logging.getLogger("dxf_reader")
 
@@ -34,6 +40,7 @@ class DXFReader:
             "CIRCLE": self.do_circle,
             "ARC": self.do_arc,
             "LWPOLYLINE": self.do_lwpolyline,
+            "SPLINE": self.do_spline,
         }
 
         # tolerance settings, used in tessalation, path simplification, etc         
@@ -47,6 +54,8 @@ class DXFReader:
 
         # Assume metric by default
         self.metricflag = 1
+
+        self.splinesegs = 8
         self.linecount = 0
 
         self.line = ''
@@ -126,6 +135,9 @@ class DXFReader:
             else:
                 self.__log.info("Found metric units indicator.")
 
+        # The drawing spline segments setting
+        if self.headers['$SPLINESEGS']:
+            self.splinesegs = int(self.headers['$SPLINESEGS'][1])
 
     # Read through all layer data
     def do_tables(self):
@@ -306,6 +318,7 @@ class DXFReader:
         for i in range(0,numverts):
             x = float(self.readgroup(10))
             y = float(self.readgroup(20))
+
             if self.metricflag == 0:
                 x = x*25.4
                 y = y*25.4
@@ -316,6 +329,46 @@ class DXFReader:
 
         return path
 
+    def do_spline(self):
+        flags = int(self.readgroup(70))
+        degree = int(self.readgroup(71))
+        num_knots = int(self.readgroup(72))
+        num_controls = int(self.readgroup(73))
+
+        knots = []
+        for i in range(0, num_knots):
+            knots.append(float(self.readgroup(40)))
+
+        controls = []
+        for i in range(0, num_controls):
+            x = float(self.readgroup(10))
+            y = float(self.readgroup(20))
+            z = float(self.readgroup(30))
+
+            if self.metricflag == 0:
+                x = x*25.4
+                y = y*25.4
+                z = z*25.4
+
+            controls.append([x, y, z])
+
+        if flags & self.__SPLINE_CLOSED:
+            def _wrapList(list, items):
+                temp = list[-items:len(list)]
+                temp.extend(list)
+                temp.extend(list[0:items])
+
+                return temp
+
+            controls.append(controls[0])
+            #knots = _wrapList(knots, degree)
+
+
+        self.__log.debug( "Spline is %s with a %s knot vector" % ("closed" if (flags & self.__SPLINE_CLOSED) else "open", "uniform" if (flags & self.__SPLINE_PERIODIC) else "open"))
+
+        path = []
+        self.addSpline(path, degree, controls, knots, flags & self.__SPLINE_PERIODIC)
+        return path
 
     def addArc(self, path, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2):
         # Implemented based on the SVG implementation notes
@@ -393,7 +446,111 @@ class DXFReader:
         _recursiveArc(t1Init, t2Init, c1Init, c5Init, 0, self.tolerance2)
         path.append(c5Init)
 
+    # TODO generate spline from knots and controls
+    def addSpline(self, path, degree, controls, weights, periodic):
+        npts = len(controls)
 
+        order = degree + 1
+        nplusc = npts + order
 
+        # n - Number of polygon vertices
+        # c - Order of the basis function
+        # periodic - is the knot vector periodic
+        def _knotVector():
+            if periodic:
+                return range(0, nplusc)
 
+            nplus2 = npts + 2
+            peak = nplus2 - order
+
+            return [0]*(order - 1) + range(1, peak + 1) + [peak]*(nplusc - nplus2 + 1)
+
+        x = _knotVector()
+
+        def _rationalBasis(t):
+            nplusc = npts + order;
+
+            # calculate the first order nonrational basis functions n[i]
+            temp = []
+            for i in range(1, nplusc):
+                temp.append(1 if ((t >= x[i - 1]) and (t < x[i])) else 0)
+
+            # calculate the higher order nonrational basis functions
+            for k in range(2, order):
+                for i in range(0, nplusc - k):
+                    # if the lower order basis function is zero skip the calculation
+                    d = temp[i] * ((t-x[i]))/(x[i+k-1]-x[i]) if temp[i] != 0 else 0
+
+                    # if the lower order basis function is zero skip the calculation
+                    e = temp[i+1] * ((x[i+k]-t))/(x[i+k]-x[i+1]) if temp[i + 1] != 0 else 0
+
+                    temp[i] = d + e
+
+            if t == float(x[nplusc - 1]):
+                temp[npts] = 1
+
+            # calculate sum for denominator of rational basis functions
+            sum = 0
+            for i in range(0, npts):
+                sum += temp[i]*weights[i]
+
+            r = []
+            for i in range(0, npts):
+                r.append((temp[i] * weights[i])/(sum) if sum != 0 else 0)
+
+            return r
+
+        def _evalPoint(t):
+            p = [0.0, 0.0, 0.0]
+            nbasis = _rationalBasis(t)
+
+            for j in range(0, 3):
+                for i in range(0, npts):
+                    temp = nbasis[i] * controls[i][j]
+                    p[j] += temp
+
+            # We're only interested in the x and y coordinates
+            return p[0:2]
+
+        def _recursiveSpline(level, t1, p1, t2, p2):
+            def _vectorDot(u, v):
+                return sum([a*b for a, b in zip(u, v)])
+
+            if level > 18:
+                return
+
+            t0 = 0.5 * (t1 + t2)
+            p0 = _evalPoint(t0)
+
+            d1 = [u - v for u,v in zip(p0, p1)]
+            d2 = [u - v for u,v in zip(p0, p2)]
+
+            # TODO instead of this point-point distance it should be point-segment distance
+            if _vectorDot(d1, d1) > self.tolerance2:
+                _recursiveSpline(level + 1, t1, p1, t0, p0)
+                path.append(p0[0:2])
+
+            if _vectorDot(d2, d2) > self.tolerance2:
+                _recursiveSpline(level + 1, t0, p0, t2, p2)
+
+        t_prev = 0.0
+        pt_prev = _evalPoint(t_prev)
+        path.append(pt_prev)
+
+        self.__log.debug("C(%.6f) = %s" % (t_prev, pt_prev))
+
+        for i in range(1, npts):
+            t_curr = x[nplusc - 1] * float(i) / (npts - 1)
+            pt_curr = _evalPoint(t_curr)
+
+            _recursiveSpline(0, t_prev, pt_prev, t_curr, pt_curr)
+
+            path.append(pt_curr)
+
+            t_prev = t_curr
+            pt_prev = pt_curr
+
+        path.append(pt_prev)
+
+        self.__log.debug("C(%.6f) = %s" % (t_prev, pt_prev))
 
