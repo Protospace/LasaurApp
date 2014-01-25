@@ -28,6 +28,14 @@ class DXFReader:
     def __init__(self, tolerance):
         self.__log = logging.getLogger("dxf_reader")
 
+        self.__entity_handlers = {
+            "POINT": self.do_point,
+            "LINE": self.do_line,
+            "CIRCLE": self.do_circle,
+            "ARC": self.do_arc,
+            "LWPOLYLINE": self.do_lwpolyline,
+        }
+
         # tolerance settings, used in tessalation, path simplification, etc         
         self.tolerance = tolerance
         self.tolerance2 = tolerance**2
@@ -163,15 +171,29 @@ class DXFReader:
     # Read through all entity data
     def do_entities(self):
         # TODO: Read entire entity blocks before evaluating each entity
+        self.readtocode(0)
+
         while True:
-            self.readtocode(0)
-            if self.line == "LINE": self.do_line()
-            elif self.line == "CIRCLE": self.do_circle()
-            elif self.line == "ARC": self.do_arc()
-            elif self.line == "LWPOLYLINE": self.do_lwpolyline()
-            #elif self.line == "SPLINE": self.complain_spline()
-            elif self.line == "ENDSEC": break
-            else: print "Unknown element '" + self.line + "' on line ", self.linecount
+            if self.dxfcode != 0:
+                self.readtocode(0)
+            if self.dxfcode == 0 and self.line == "ENDSEC": break
+
+            entity_type = self.line
+            entity_line = self.linecount
+
+            layer_name = self.readgroup(8)
+
+            if entity_type in self.__entity_handlers:
+                path = self.__entity_handlers[entity_type]()
+            else:
+                self.__log.warn("Unknown element '%s' on line %d" % (entity_type, entity_line))
+                self.readonepair()
+
+            if path:
+                layer_color = self.get_layer_color(layer_name)
+                if not layer_color in self.boundarys:
+                    self.boundarys[layer_color] = []
+                self.boundarys[layer_color].append(path)
 
     ################
     # Routines to read entries from the DXF file
@@ -202,6 +224,11 @@ class DXFReader:
     def readgroup(self, codeval):
         self.readtocode(codeval)
         return self.line
+
+    def get_layer_color(self,layer_name):
+        if layer_name and self.layers[layer_name]:
+            return self.layers[layer_name]["color"]
+        return None
 
     ################
     # Translate each type of entity (line, circle, arc, lwpolyline)
@@ -289,10 +316,6 @@ class DXFReader:
 
         return path
 
-    def complain_invalid(self):
-        print "Invalid element '" + self.line + "' on line ", self.linecount
-        print "Can't process this DXF file. Sorry!"
-        raise ValueError
 
     def addArc(self, path, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2):
         # Implemented based on the SVG implementation notes
