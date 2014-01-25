@@ -56,10 +56,10 @@ class DXFReader:
         self.metricflag = 1
 
         self.splinesegs = 8
-        self.linecount = 0
 
         self.line = ''
         self.dxfcode = ''
+        self.linecount = 0
 
         self.headers = {}
         self.blocks = {}
@@ -89,6 +89,7 @@ class DXFReader:
 
         self.infile.close()
         self.__log.info('Done')
+
         return {'boundarys': self.boundarys}
 
     # Read through all of the drawing variables
@@ -260,11 +261,12 @@ class DXFReader:
         y1 = float(self.readgroup(20))
         x2 = float(self.readgroup(11))
         y2 = float(self.readgroup(21))
+
         if self.metricflag == 0:
             x1 = x1*25.4
-            y1 = y1*25.4        
+            y1 = y1*25.4
             x2 = x2*25.4
-            y2 = y2*25.4        
+            y2 = y2*25.4
 
         return [[x1,y1],[x2,y2]]
 
@@ -272,10 +274,12 @@ class DXFReader:
         cx = float(self.readgroup(10))
         cy = float(self.readgroup(20))
         r = float(self.readgroup(40))
+
         if self.metricflag == 0:
             cx = cx*25.4
-            cy = cy*25.4        
-            r = r*25.4  
+            cy = cy*25.4
+            r = r*25.4
+
         path = []
         self.addArc(path, cx-r, cy, r, r, 0, 0, 0, cx, cy+r)
         self.addArc(path, cx, cy+r, r, r, 0, 0, 0, cx+r, cy)
@@ -288,12 +292,15 @@ class DXFReader:
         cx = float(self.readgroup(10))
         cy = float(self.readgroup(20))
         r = float(self.readgroup(40))
-        if self.metricflag == 0:
-            cx = cx*25.4
-            cy = cy*25.4        
-            r = r*25.4        
+
         theta1deg = float(self.readgroup(50))
         theta2deg = float(self.readgroup(51))
+
+        if self.metricflag == 0:
+            cx = cx*25.4
+            cy = cy*25.4
+            r = r*25.4
+
         thetadiff = theta2deg-theta1deg
         if thetadiff < 0 : thetadiff = thetadiff + 360
         large_arc_flag = int(thetadiff >= 180)
@@ -304,8 +311,10 @@ class DXFReader:
         y1 = cy + r*math.sin(theta1)
         x2 = cx + r*math.cos(theta2)
         y2 = cy + r*math.sin(theta2)
+
         path = []
         self.addArc(path, x1, y1, r, r, 0, large_arc_flag, sweep_flag, x2, y2)
+
         return path
 
     def do_lwpolyline(self):
@@ -391,7 +400,7 @@ class DXFReader:
         cy_ = -r*ry*x_ / rx
         cx = cp*cx_ - sp*cy_ + 0.5*(x1 + x2)
         cy = sp*cx_ + cp*cy_ + 0.5*(y1 + y2)
-        
+
         def _angle(u, v):
             a = math.acos((u[0]*v[0] + u[1]*v[1]) /
                             math.sqrt(((u[0])**2 + (u[1])**2) *
@@ -400,25 +409,25 @@ class DXFReader:
             if u[0]*v[1] > u[1]*v[0]:
                 sgn = 1
             return sgn * a
-    
+
         psi = _angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry])
         delta = _angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry])
         if sweep and delta < 0:
             delta += math.pi * 2
         if not sweep and delta > 0:
             delta -= math.pi * 2
-        
+
         def _getVertex(pct):
             theta = psi + delta * pct
             ct = math.cos(theta)
             st = math.sin(theta)
             return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]        
-        
+
         # let the recursive fun begin
         def _recursiveArc(t1, t2, c1, c5, level, tolerance2):
             def _vertexDistanceSquared(v1, v2):
                 return (v2[0]-v1[0])**2 + (v2[1]-v1[1])**2
-            
+
             def _vertexMiddle(v1, v2):
                 return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ]
 
@@ -437,7 +446,7 @@ class DXFReader:
             path.append(c3)
             if _vertexDistanceSquared(c4, _vertexMiddle(c3,c5)) > tolerance2:
                 _recursiveArc(tHalf, t2, c3, c5, level+1, tolerance2)
-                
+
         t1Init = 0.0
         t2Init = 1.0
         c1Init = _getVertex(t1Init)
