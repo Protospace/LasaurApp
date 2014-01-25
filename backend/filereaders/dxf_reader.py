@@ -362,18 +362,6 @@ class DXFReader:
 
             controls.append([x, y, z])
 
-        if flags & self.__SPLINE_CLOSED:
-            def _wrapList(list, items):
-                temp = list[-items:len(list)]
-                temp.extend(list)
-                temp.extend(list[0:items])
-
-                return temp
-
-            controls.append(controls[0])
-            #knots = _wrapList(knots, degree)
-
-
         self.__log.debug( "Spline is %s with a %s knot vector" % ("closed" if (flags & self.__SPLINE_CLOSED) else "open", "uniform" if (flags & self.__SPLINE_PERIODIC) else "open"))
 
         path = []
@@ -462,20 +450,6 @@ class DXFReader:
 
         order = degree + 1
         nplusc = npts + order
-
-        # n - Number of polygon vertices
-        # c - Order of the basis function
-        # periodic - is the knot vector periodic
-        def _knotVector():
-            if periodic:
-                return range(0, nplusc)
-
-            nplus2 = npts + 2
-            peak = nplus2 - order
-
-            return [0]*(order - 1) + range(1, peak + 1) + [peak]*(nplusc - nplus2 + 1)
-
-        x = _knotVector()
 
         def _rationalBasis(t):
             nplusc = npts + order;
