@@ -349,11 +349,15 @@ class DXFReader:
         for i in range(0, num_knots):
             knots.append(float(self.readgroup(40)))
 
+        weights = []
         controls = []
         for i in range(0, num_controls):
-            x = float(self.readgroup(10))
+            x = float(self.readgroup(10) if self.dxfcode != 10 else self.line)
             y = float(self.readgroup(20))
             z = float(self.readgroup(30))
+
+            self.readonepair()
+            weights.append(float(self.line) if self.dxfcode == 41 else 1.0)
 
             if self.metricflag == 0:
                 x = x*25.4
@@ -362,10 +366,8 @@ class DXFReader:
 
             controls.append([x, y, z])
 
-        self.__log.debug( "Spline is %s with a %s knot vector" % ("closed" if (flags & self.__SPLINE_CLOSED) else "open", "uniform" if (flags & self.__SPLINE_PERIODIC) else "open"))
-
         path = []
-        self.addSpline(path, degree, controls, knots, flags & self.__SPLINE_PERIODIC)
+        self.addSpline(path, degree, controls, knots, weights, bool(flags & self.__SPLINE_PERIODIC))
         return path
 
     def addArc(self, path, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2):
@@ -445,7 +447,7 @@ class DXFReader:
         path.append(c5Init)
 
     # TODO generate spline from knots and controls
-    def addSpline(self, path, degree, controls, weights, periodic):
+    def addSpline(self, path, degree, controls, x, weights, periodic):
         npts = len(controls)
 
         order = degree + 1
@@ -474,13 +476,13 @@ class DXFReader:
                 temp[npts] = 1
 
             # calculate sum for denominator of rational basis functions
-            sum = 0
+            total = 0
             for i in range(0, npts):
-                sum += temp[i]*weights[i]
+                total += temp[i + 1] * weights[i]
 
             r = []
             for i in range(0, npts):
-                r.append((temp[i] * weights[i])/(sum) if sum != 0 else 0)
+                r.append((temp[i + 1] * weights[i])/(total) if total != 0 else 0)
 
             return r
 
@@ -552,6 +554,4 @@ class DXFReader:
             pt_prev = pt_curr
 
         path.append(pt_prev)
-
-        self.__log.debug("C(%.6f) = %s" % (t_prev, pt_prev))
 
