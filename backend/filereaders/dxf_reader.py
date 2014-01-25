@@ -326,7 +326,7 @@ class DXFReader:
         points = []
         bulge = []
 
-        # TODO handle bulge
+        # Read vertices and any of the optional bulges
         for i in range(0, numverts):
             x = float(self.readgroup(10) if self.dxfcode != 10 else self.line)
             y = float(self.readgroup(20))
@@ -340,6 +340,7 @@ class DXFReader:
 
             points.append([x,y])
 
+        # Wrap the last vertex for closed poly lines
         if poly_flags & self.__LWPOLY_CLOSED:
             points.append(points[0])
             bulge.append(None)
@@ -363,6 +364,7 @@ class DXFReader:
 
                 self.addArc(path, p0[0], p0[1], r, r, 0, large_arc_flag, sweep_flag, p1[0], p1[1])
             elif last_was_arc:
+                # Avoid replication of arc end points
                 last_was_arc = False
             else:
                 path.append(node[1])
@@ -375,10 +377,12 @@ class DXFReader:
         num_knots = int(self.readgroup(72))
         num_controls = int(self.readgroup(73))
 
+        # Read the knot vector
         knots = []
         for i in range(0, num_knots):
             knots.append(float(self.readgroup(40)))
 
+        # Read control points and any of the optional weights
         weights = []
         controls = []
         for i in range(0, num_controls):
@@ -476,8 +480,11 @@ class DXFReader:
         _recursiveArc(t1Init, t2Init, c1Init, c5Init, 0, self.tolerance2)
         path.append(c5Init)
 
-    # TODO generate spline from knots and controls
     def addSpline(self, path, degree, controls, x, weights, periodic):
+        # Implementation described in "An Introduction to NURBS" by David F. Rogers
+        # Google books: http://books.google.ca/books?id=MaW4XiScJ7cC&lpg=PA1&pg=PP1#v=onepage&q&f=false
+        # Example source: http://www.nar-associates.com/nurbs/c_code.html
+
         npts = len(controls)
 
         order = degree + 1
@@ -511,6 +518,7 @@ class DXFReader:
                 total += temp[i + 1] * weights[i]
 
             r = []
+            # normalize rational basis
             for i in range(0, npts):
                 r.append((temp[i + 1] * weights[i])/(total) if total != 0 else 0)
 
@@ -518,31 +526,42 @@ class DXFReader:
 
         def _evalPoint(t):
             p = [0.0, 0.0, 0.0]
+
+            # Get the basis function at t
             nbasis = _rationalBasis(t)
 
+            # Perform matrix mutiplication between basis and control points
             for j in range(0, 3):
                 for i in range(0, npts):
                     temp = nbasis[i] * controls[i][j]
                     p[j] += temp
 
-            # We're only interested in the x and y coordinates
+            # Only interested in the x and y coordinates
             return p[0:2]
 
         def _recursiveSpline(level, t1, p1, t2, p2):
             def _distPointSegment(p, u, v):
+                # Calculate distance between a point and a segment using vector projection
+
                 l2 = self._distance2(u, v)
                 if l2 == 0.0:
+                    # Zero length segment case
                     return self._distance(p, u)
 
                 t = self._vectorDot(self._vectorSub(p, u), self._vectorSub(v, u)) / l2
                 if t < 0.0:
+                    # Before the start of the segment
                     return self._distance(p, u)
                 if t > 1.0:
+                    # After the end of the segment
                     return self._distance(p, v)
 
+                # Distance between point and it's projection onto the segment
                 return self._distance(p, [u + t * (v - u) for u,v in zip(u, v)])
 
             if level > 18:
+                # protect from deep recursion cases
+                # max 2**18 = 262144 segments
                 return
 
             t0 = 0.5 * (t1 + t2)
@@ -555,6 +574,7 @@ class DXFReader:
 
                 _recursiveSpline(level + 1, t0, p0, t2, p2)
 
+        # Evaluate the NURBS curve
         t_prev = 0.0
         pt_prev = _evalPoint(t_prev)
         path.append(pt_prev)
@@ -569,8 +589,6 @@ class DXFReader:
 
             t_prev = t_curr
             pt_prev = pt_curr
-
-        path.append(pt_prev)
 
     def _vectorDot(self, u, v):
         return sum([a*b for a, b in zip(u, v)])
