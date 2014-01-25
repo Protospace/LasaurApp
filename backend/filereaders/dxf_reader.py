@@ -526,28 +526,45 @@ class DXFReader:
             def _vectorDot(u, v):
                 return sum([a*b for a, b in zip(u, v)])
 
+            def _vectorSubtract(u, v):
+                return [u - v for u,v in zip(u, v)]
+
+            def _distance2(u, v):
+                t = _vectorSubtract(u, v)
+                return _vectorDot(t, t)
+
+            def _distance(u, v):
+                return math.sqrt(_distance2(u, v))
+
+            def _distPointSegment(p, u, v):
+                l2 = _distance2(u, v)
+                if l2 == 0.0:
+                    return _distance(p, u)
+
+                t = _vectorDot(_vectorSubtract(p, u), _vectorSubtract(v, u)) / l2
+                if t < 0.0:
+                    return _distance(p, u)
+                if t > 1.0:
+                    return _distance(p, v)
+
+                return _distance(p, [u + t * (v - u) for u,v in zip(u, v)])
+
             if level > 18:
                 return
 
             t0 = 0.5 * (t1 + t2)
             p0 = _evalPoint(t0)
 
-            d1 = [u - v for u,v in zip(p0, p1)]
-            d2 = [u - v for u,v in zip(p0, p2)]
-
-            # TODO instead of this point-point distance it should be point-segment distance
-            if _vectorDot(d1, d1) > self.tolerance2:
+            if _distPointSegment(p0, p1, p2) > self.tolerance2:
                 _recursiveSpline(level + 1, t1, p1, t0, p0)
+
                 path.append(p0[0:2])
 
-            if _vectorDot(d2, d2) > self.tolerance2:
                 _recursiveSpline(level + 1, t0, p0, t2, p2)
 
         t_prev = 0.0
         pt_prev = _evalPoint(t_prev)
         path.append(pt_prev)
-
-        self.__log.debug("C(%.6f) = %s" % (t_prev, pt_prev))
 
         for i in range(1, npts):
             t_curr = x[nplusc - 1] * float(i) / (npts - 1)
