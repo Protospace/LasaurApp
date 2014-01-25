@@ -294,20 +294,21 @@ class DXFReader:
         cy = float(self.readgroup(20))
         r = float(self.readgroup(40))
 
-        theta1deg = float(self.readgroup(50))
-        theta2deg = float(self.readgroup(51))
+        theta1 = math.radians(float(self.readgroup(50)))
+        theta2 = math.radians(float(self.readgroup(51)))
 
         if self.metricflag == 0:
             cx = cx*25.4
             cy = cy*25.4
             r = r*25.4
 
-        thetadiff = theta2deg-theta1deg
-        if thetadiff < 0 : thetadiff = thetadiff + 360
-        large_arc_flag = int(thetadiff >= 180)
+        thetadiff = theta2 - theta1
+        if thetadiff < 0:
+            thetadiff = thetadiff + 2.0 * math.pi
+
+        large_arc_flag = int(thetadiff >= math.pi)
         sweep_flag = 1
-        theta1 = theta1deg/180.0 * math.pi;
-        theta2 = theta2deg/180.0 * math.pi;
+
         x1 = cx + r*math.cos(theta1)
         y1 = cy + r*math.sin(theta1)
         x2 = cx + r*math.cos(theta2)
