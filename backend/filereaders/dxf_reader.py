@@ -323,20 +323,49 @@ class DXFReader:
         numverts = int(self.readgroup(90))
         poly_flags = int(self.readgroup(70))
 
-        path = []
+        points = []
+        bulge = []
 
         # TODO handle bulge
-        for i in range(0,numverts):
-            x = float(self.readgroup(10))
+        for i in range(0, numverts):
+            x = float(self.readgroup(10) if self.dxfcode != 10 else self.line)
             y = float(self.readgroup(20))
+
+            self.readonepair()
+            bulge.append(4.0 * math.atan(float(self.line)) if self.dxfcode == 42 else None)
 
             if self.metricflag == 0:
                 x = x*25.4
                 y = y*25.4
-            path.append([x,y])
+
+            points.append([x,y])
 
         if poly_flags & self.__LWPOLY_CLOSED:
-            path.append(path[0])
+            points.append(points[0])
+            bulge.append(None)
+
+        path = []
+        last_was_arc = False
+        for i, node in enumerate(zip(bulge, points)):
+            if node[0]:
+                last_was_arc = True
+
+                # Handle nodes with bulge
+                # Based on conversion described at http://www.lee-mac.com/bulgeconversion.html#bulgearc
+                b = node[0]
+                p0 = node[1]
+                p1 = points[i + 1]
+
+                r = self._distance(p0, p1) / (2.0 * math.sin(0.5 * b))
+
+                large_arc_flag = int(node[0] >= math.pi)
+                sweep_flag = int(r >c 0.0)
+
+                self.addArc(path, p0[0], p0[1], r, r, 0, large_arc_flag, sweep_flag, p1[0], p1[1])
+            elif last_was_arc:
+                last_was_arc = False
+            else:
+                path.append(node[1])
 
         return path
 
