@@ -266,11 +266,6 @@ class DXFReader:
                 y = y*25.4
             path.append([x,y])
 
-    def complain_spline(self):
-        print "Encountered a SPLINE at line", self.linecount
-        print "This program cannot handle splines at present."
-        print "Convert the spline to an LWPOLYLINE using Save As options in SolidWorks."
-        raise ValueError
 
     def complain_invalid(self):
         print "Invalid element '" + self.line + "' on line ", self.linecount
