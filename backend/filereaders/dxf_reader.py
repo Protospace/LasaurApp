@@ -11,7 +11,11 @@ import logging
 import StringIO
 
 class DXFReader:
-    """Parse very simple DXF files with lines, arcs, and lwpolyline.
+    """
+    Parse very simple DXF files with points, lines, circles, ellipses, arcs, lwpolylines, splines.
+    Entity types that are not understood are skipped according to the expected behaviour defined
+    in the DXF file format specification found at:
+        http://usa.autodesk.com/adsk/servlet/item?siteID=123112&id=12272454&linkID=10809853
 
     Usage:
     reader = DXFReader(0.08)
