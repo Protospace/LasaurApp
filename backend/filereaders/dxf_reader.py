@@ -596,9 +596,13 @@ class DXFReader:
     def _vectorSub(self, u, v):
         return [u - v for u,v in zip(u, v)]
 
+    def _magnitude2(self, u):
+        return self._vectorDot(u, u)
+    def _magnitude(self, u):
+        return math.sqrt(self._vectorDot(u, u))
+
     def _distance2(self, u, v):
         t = self._vectorSub(u, v)
         return self._vectorDot(t, t)
-
     def _distance(self, u, v):
         return math.sqrt(self._distance2(u, v))
