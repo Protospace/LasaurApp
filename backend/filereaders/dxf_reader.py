@@ -38,6 +38,7 @@ class DXFReader:
             "POINT": self.do_point,
             "LINE": self.do_line,
             "CIRCLE": self.do_circle,
+            "ELLIPSE": self.do_ellipse,
             "ARC": self.do_arc,
             "LWPOLYLINE": self.do_lwpolyline,
             "SPLINE": self.do_spline,
@@ -286,6 +287,39 @@ class DXFReader:
         self.addArc(path, cx, cy+r, r, r, 0, 0, 0, cx+r, cy)
         self.addArc(path, cx+r, cy, r, r, 0, 0, 0, cx, cy-r)
         self.addArc(path, cx, cy-r, r, r, 0, 0, 0, cx-r, cy)
+
+        return path
+
+    def do_ellipse(self):
+        cx = float(self.readgroup(10))
+        cy = float(self.readgroup(20))
+
+        xmajor = float(self.readgroup(11))
+        ymajor = float(self.readgroup(21))
+
+        ratio = float(self.readgroup(40))
+
+        if self.metricflag == 0:
+            cx = cx*25.4
+            cy = cy*25.4
+
+            xmajor = xmajor*25.4
+            ymajor = ymajor*25.4
+
+        phimajor = math.atan2(ymajor, xmajor)
+        phiminor = phimajor + 0.5 * math.pi
+
+        xminor = -ratio * ymajor
+        yminor = ratio * xmajor
+
+        rmajor = self._magnitude([xmajor, ymajor])
+        rminor = ratio * rmajor
+
+        path = []
+        self.addArc(path, cx + xmajor, cy + ymajor, rmajor, rminor, phimajor, 0, 1, cx + xminor, cy + yminor)
+        self.addArc(path, cx + xminor, cy + yminor, rminor, rmajor, phiminor, 0, 1, cx - xmajor, cy - ymajor)
+        self.addArc(path, cx - xmajor, cy - ymajor, rmajor, rminor, phimajor, 0, 1, cx - xminor, cy - yminor)
+        self.addArc(path, cx - xminor, cy - yminor, rminor, rmajor, phiminor, 0, 1, cx + xmajor, cy + ymajor)
 
         return path
 
