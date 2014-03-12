@@ -5,6 +5,7 @@ File Reader Module
 
 __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
+import sys
 
 from .svg_reader import SVGReader
 from .dxf_reader import DXFReader
@@ -26,11 +27,28 @@ def read_dxf(dxf_string, tolerance, optimize=True):
     parse_results = dxfReader.parse(dxf_string)
     if optimize:
         optimize_all(parse_results['boundarys'], tolerance)
-    # # flip y-axis
-    # for color,paths in parse_results['boundarys'].items():
-    # 	for path in paths:
-    # 		for vertex in path:
-    # 			vertex[1] = 610-vertex[1]
+
+    min_x, max_x = sys.float_info.max, -sys.float_info.max
+    min_y, max_y = sys.float_info.max, -sys.float_info.max
+
+    for color, paths in parse_results['boundarys'].items():
+        for path in paths:
+            for vertex in path:
+                min_x = min(min_x, vertex[0])
+                max_x = max(max_x, vertex[0])
+
+                min_y = min(min_y, vertex[1])
+                max_y = max(max_y, vertex[1])
+
+    # flip y-axis
+    delta_x = max_x - min_x
+    delta_y = max_y - min_y
+    for color, paths in parse_results['boundarys'].items():
+        for path in paths:
+            for vertex in path:
+                vertex[0] = vertex[0] - min_x
+                vertex[1] = delta_y - (vertex[1] - min_y)
+
     return parse_results
 
 
