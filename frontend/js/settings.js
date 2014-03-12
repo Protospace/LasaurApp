@@ -4,7 +4,7 @@ var app_settings = {
   max_seek_speed: 8000,
   default_feedrate: 1500,
   default_intensity: 30,
-  num_digits: 2,
+  num_digits: 2, 
   max_num_queue_items: 24,
   max_segment_length: 5.0,
   table_offset: [5,5],  // has to match firmware
