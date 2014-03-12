@@ -131,7 +131,7 @@ class DXFReader:
                 self.__log.warn("Unrecognized DXF version: %s" % (acadver))
 
         # Read the files units setting
-        if self.headers["$MEASUREMENT"]:
+        if '$MEASUREMENT' in self.headers and  self.headers["$MEASUREMENT"]:
             self.metricflag = int(self.headers["$MEASUREMENT"][1])
             if self.metricflag == 0:
                 self.__log.info("Found imperial units indicator, converting to mm.")
@@ -142,7 +142,7 @@ class DXFReader:
                 self.__log.info("Found metric units indicator.")
 
         # The drawing spline segments setting
-        if self.headers['$SPLINESEGS']:
+        if '$SPLINESEGS' in self.headers and self.headers['$SPLINESEGS']:
             self.splinesegs = int(self.headers['$SPLINESEGS'][1])
 
     # Read through all layer data
@@ -157,7 +157,7 @@ class DXFReader:
 
     def do_table_layer(self):
         layer_name = None
-        layer_color = None
+        layer_color = 0
         layer_plotting = True
 
         while True:
