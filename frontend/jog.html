@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<title>Lasersaur Jog Control</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css"> 
+
+<script src="/js/jquery-1.7.2.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/lasersaur.js"></script>
+<script src="/js/settings.js"></script>
+
+<script>
+	$(function() {
+		setInterval(update_serial, 10000);
+
+		$(".btn-gcode").on("click", function(evt) {
+			Lasersaur.gcode.raw($("#gcode").val());
+		})
+		$(".btn-home").on("click", function(evt) {
+			Lasersaur.gcode.home();
+		});
+		$(".btn-jog").on("click", function() {
+			var jog = parseFloat($("#jog").val());
+
+			var ctx = {};
+			ctx[$(this).data("axis")] = parseInt($(this).data("dir")) * jog;
+			ctx.rate = parseFloat($(this).data("rate"));
+
+			Lasersaur.gcode.clear();
+			Lasersaur.gcode.relative();
+			Lasersaur.gcode.seek(ctx);
+			Lasersaur.gcode.flush();
+		});
+		$(".btn-goto").on("click", function() {
+			var ctx = {};
+			ctx[$(this).data("axis")] = parseFloat($("#" + $(this).attr("for")).val());
+			ctx.rate = parseFloat($(this).data("rate"));
+
+			console.log(ctx);
+
+			Lasersaur.gcode.clear();
+			Lasersaur.gcode.absolute();
+			Lasersaur.gcode.seek(ctx);
+			Lasersaur.gcode.flush();
+		})
+	});
+
+	function update_serial() {
+		Lasersaur.status(function(status) {
+			console.log(status);
+		});
+	}
+</script>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="span3">
+				<div class="form-group">
+					<label for="jog">Jog Step (mm)</label>
+					<input id="jog" type="text" class="form-control" value="1.0"></input>
+				</div>
+				<button class="btn btn-default btn-home">Home</button>
+				<div>
+					<button class="btn btn-default btn-jog" data-axis="x" data-dir="-1" data-rate="8000">X-</button>
+					<button class="btn btn-default btn-jog" data-axis="x" data-dir="1" data-rate="8000">X+</button>
+					<input id="pos-x" type="text"></input>
+					<button class="btn btn-default btn-goto" for="pos-x" data-axis="x" data-rate="8000">Go To</button>
+				</div>
+				<div>
+					<button class="btn btn-default btn-jog" data-axis="y" data-dir="-1" data-rate="8000">Y-</button>
+					<button class="btn btn-default btn-jog" data-axis="y" data-dir="1" data-rate="8000">Y+</button>
+					<input id="pos-y" type="text"></input>
+					<button class="btn btn-default btn-goto" for="pos-y" data-axis="y" data-rate="8000">Go To</button>
+				</div>
+				<div>
+					<button class="btn btn-default btn-jog" data-axis="z" data-dir="-1" data-rate="130">Z-</button>
+					<button class="btn btn-default btn-jog" data-axis="z" data-dir="1" data-rate="130">Z+</button>
+					<input id="pos-z" type="text"></input>
+					<button class="btn btn-default btn-goto" for="pos-z" data-axis="z" data-rate="130">Go To</button>
+				</div>
+			</div>
+			<div class="span6">
+				<textarea id="gcode" cols="80" rows="10"></textarea>
+				<button class="btn btn-default btn-gcode">Send GCode</button>
+			</div>
+		</div>
+	</div>
+</body>

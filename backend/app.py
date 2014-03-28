@@ -293,6 +293,9 @@ def queue_unstar_handler(name):
 def default_handler():
     return static_file('app.html', root=os.path.join(resources_dir(), 'frontend') )
 
+@route('/jog')
+def jog_handler():
+    return static_file('jog.html', root=os.path.join(resources_dir(), 'frontend') )
 
 @route('/stash_download', method='POST')
 def stash_download():

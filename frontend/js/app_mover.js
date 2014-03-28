@@ -26,7 +26,7 @@ $(document).ready(function(){
     	}
     	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
     	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
-    	var gcode = 'G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n'+air_assist_off;	
+    	var gcode = 'G54 G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n'+air_assist_off;	
       // $().uxmessage('notice', gcode);
     	send_gcode(gcode, "Motion request sent.", false);    
   }
@@ -54,37 +54,13 @@ $(document).ready(function(){
   }).mouseup(function() {
     isDragging = false;
   });
-  
 
   $("#cutting_area").click(function(e) {
   	var offset = $(this).offset();
   	var x = (e.pageX - offset.left);
   	var y = (e.pageY - offset.top);
 
-    if(e.shiftKey) {
-      //// set offset
-      $("#offset_area").show();
-      $("#offset_area").animate({
-        opacity: 1.0,
-        left: x,
-        top: y,
-        width: 609-x,
-        height: 304-y
-      }, 200 );
-      gcode_coordinate_offset = [x,y];
-      var gcode = 'G10 L2 P1 X'+ 2*x + ' Y' + 2*y + '\nG55\n';
-      send_gcode(gcode, "Offset set.", false);
-  		$(this).css('border', '1px dashed #aaaaaa');
-  		$("#offset_area").css('border', '1px dashed #ff0000');
-    } else if (!gcode_coordinate_offset) {	
-      assemble_and_send_gcode(x,y);
-    } else {
-      var pos = $("#offset_area").position()
-      if ((x < pos.left) || (y < pos.top)) {       
-        //// reset offset
-        reset_offset();
-      }
-    }
+    assemble_and_send_gcode(x,y);
     return false;
   });
 
@@ -107,41 +83,18 @@ $(document).ready(function(){
   	var offset = $(this).offset();
   	var x = (e.pageX - offset.left);
   	var y = (e.pageY - offset.top);
-  	if (!gcode_coordinate_offset) {
-  	  if(!e.shiftKey) {
         coords_text = assemble_info_text(x,y);
-        if (e.altKey &&isDragging) {
-            assemble_and_send_gcode(x,y);
-        }
-      } else {
-        coords_text = 'set offset to (' + 2*x + ', '+ 2*y + ')';
-      }
-    } else {
-      if(e.shiftKey) {
-        coords_text = 'set offset to (' + x + ', '+ y + ')'
-      } else {
-        var pos = $("#offset_area").position()
-        if ((x < pos.left) || (y < pos.top)) {           
-          coords_text = 'click to reset offset';
-        } else {
-          coords_text = '';
-        }
-      }
-    }
     $('#coordinates_info').text(coords_text);
   });
-  
-  
+ /* 
   $("#offset_area").click(function(e) { 
-    if(!e.shiftKey) {
     	var offset = $(this).offset();
     	var x = (e.pageX - offset.left);
     	var y = (e.pageY - offset.top);     
       assemble_and_send_gcode(x,y);
       return false
-    }
   });
-
+*/
   $("#offset_area").hover(
     function () {
     },
@@ -151,14 +104,9 @@ $(document).ready(function(){
   );
   
   $("#offset_area").mousemove(function (e) {
-    if(!e.shiftKey) {
     	var offset = $(this).offset();
     	var x = (e.pageX - offset.left);
     	var y = (e.pageY - offset.top);
-      $('#offset_info').text(assemble_info_text(x,y));
-    } else {
-      $('#offset_info').text('');
-    }
   });
   
   // function moveto (x, y) {
@@ -232,6 +180,28 @@ $(document).ready(function(){
     var gcode = 'G91\nG0Z-0.5F100\nG90\n';
     send_gcode(gcode, "Rasing Z Up ...", false)	
   });
+
+  $('#reset_offset').click(function(e) {
+	reset_offset();
+  });
+
+  $('#set_offset').click(function(e) {
+  var offset = $(this).offset();
+  var x = machine_x / 2;
+  var y =  machine_y / 2;
+      $("#offset_area").show();
+      $("#offset_area").animate({
+        opacity: 1.0,
+        left: x,
+        top: y,
+        width: app_settings.canvas_dimensions[0]-x,
+        height: app_settings.canvas_dimensions[1]-y
+      }, 200 );
+    gcode_coordinate_offset = [x,y];
+    var gcode = 'G10L20P1\nG55\n';
+    send_gcode(gcode, "Setting Offset", false)	
+  });
+
 
   //// air assist buttons
   $("#air_on_btn").click(function(e) {

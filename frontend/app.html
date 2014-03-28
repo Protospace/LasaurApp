@@ -19,10 +19,10 @@
 <script src="/js/app_laserjobs.js"></script>
 <script src="/js/app_mover.js"></script>
 <script src="/js/app_import.js"></script>
+<script src="/js/settings.js"></script>
 
 </head>
 <body>
-
 	<div class="navbar navbar-fixed-top">
 		<div class="navbar-inner">
 			<div class="container">
@@ -156,7 +156,7 @@
 									</div>
 									
 									<div class="row" style="margin-left:0px; margin-top:16px; padding-top:0">								
-										<canvas id="import_canvas" width="610px" height="305px" class="pull-left" style="border:1px dashed #aaaaaa"></canvas>										
+										<canvas id="import_canvas" width="610px" height="450px" class="pull-left" style="border:1px dashed #aaaaaa"></canvas>										
 										<div id="canvas_properties" class="pull-left" style="width:113px; margin-left:14px">
 											<div class="colorbtns"></div>
 										</div>												
@@ -193,7 +193,7 @@
 							<div id="tab_mover" class="tab-pane" style="margin-left:0px">
 								<div class="well" style="width:610px">
 									<div class="row" style="margin-left:0px">
-										<div id="cutting_area" style="position:relative; width:610px; height:305px; border:1px dashed #aaaaaa;">
+										<div id="cutting_area" style="position:relative; width:610px; height:450px; border:1px dashed #aaaaaa;">
 											<div id="coordinates_info" style="margin:4px"></div>
 											<div id="offset_area" style="display:none; position:absolute; top:100px; left:100px; width:100px; height:100px; border-top:1px dashed #aaaaaa; border-left:1px dashed #aaaaaa">
 												<div id="offset_info" style="margin:4px"></div>
@@ -233,6 +233,7 @@
 													<button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
 												</div>																						
 										</div>
+
 										<div class="span1 well" style="width:70px; height:130px; background-color:#dddddd">
 											<div class="row" style="width:36px; margin-left:auto; margin-right:auto;">
 												<button id="jog_z_up_btn" class="btn btn-large"><i class="icon-arrow-up"></i></button>
@@ -240,6 +241,11 @@
 											<div class="row" style="width:36px; margin-left:auto; margin-right:auto; margin-top:45px">
 												<button id="jog_z_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
 											</div>
+										</div>
+
+										<div class="well">
+											<button id="set_offset" class="btn btn-large">Set Offset</button>
+											<button id="clear_offset" class="btn btn-large">Clear Offset</button>
 										</div>
 									</div>
 									<div class="row" style="width:210px; margin-left:auto; margin-right:auto; margin-top:20px">

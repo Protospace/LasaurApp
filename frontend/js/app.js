@@ -1,5 +1,7 @@
 
 var hardware_ready_state = false;
+var machine_x = 0;
+var machine_y = 0;
 
 (function($){
 	$.fn.uxmessage = function(kind, text) {
@@ -357,6 +359,12 @@ $(document).ready(function(){
           $().uxmessage('error', "Rx Buffer Overflow!");
           $().uxmessage('notice', "Please report this to the author of this software.");
         }        
+	if (data.x) {
+	  machine_x = data.x;
+	}
+	if (data.y) {
+	  machine_y = data.y;
+	}
         if (data.transmission_error) {
           $().uxmessage('error', "Transmission Error!");
           $().uxmessage('notice', "If this happens a lot tell the author of this software.");
