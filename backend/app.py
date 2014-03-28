@@ -450,15 +450,18 @@ def reset_atmega_handler():
 
 @route('/gcode', method='POST')
 def job_submit_handler():
-    job_data = request.forms.get('job_data')
-    if job_data and SerialManager.is_connected():
+    job_data = request.forms.get('gcode_program')
+    if not job_data:
+        return HTTPResponse(status=400)
+
+    if SerialManager.is_connected():
         lines = job_data.split('\n')
         print "Adding to queue %s lines" % len(lines)
         for line in lines:
             SerialManager.queue_gcode_line(line)
         return "__ok__"
     else:
-        return "serial disconnected"
+        return HTTPResponse(status=502, body="serial disconnected")
 
 @route('/queue_pct_done')
 def queue_pct_done_handler():
