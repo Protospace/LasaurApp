@@ -1,4 +1,3 @@
-
 var gcode_coordinate_offset = undefined;
 
 function reset_offset() {
@@ -222,6 +221,16 @@ $(document).ready(function(){
   $("#jog_down_btn").click(function(e) {
     var gcode = 'G91\nG0Y10F6000\nG90\n';
     send_gcode(gcode, "Moving Down ...", false)	
+  });
+  
+    $("#jog_z_down_btn").click(function(e) {
+    var gcode = 'G91\nG0Z0.5F100\nG90\n';
+    send_gcode(gcode, "Lowering Z Down ...", false)	
+  });
+
+      $("#jog_z_up_btn").click(function(e) {
+    var gcode = 'G91\nG0Z-0.5F100\nG90\n';
+    send_gcode(gcode, "Rasing Z Up ...", false)	
   });
 
   //// air assist buttons
