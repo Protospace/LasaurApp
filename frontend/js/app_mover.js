@@ -223,13 +223,13 @@ $(document).ready(function(){
     send_gcode(gcode, "Moving Down ...", false)	
   });
   
-    $("#jog_Z_down_btn").click(function(e) {
-    var gcode = 'G91\nG0Z-10F100\nG90\n';
+    $("#jog_z_down_btn").click(function(e) {
+    var gcode = 'G91\nG0Z0.5F100\nG90\n';
     send_gcode(gcode, "Lowering Z Down ...", false)	
   });
-  
-      $("#jog_Z_up_btn").click(function(e) {
-    var gcode = 'G91\nG0Z10F100\nG90\n';
+
+      $("#jog_z_up_btn").click(function(e) {
+    var gcode = 'G91\nG0Z-0.5F100\nG90\n';
     send_gcode(gcode, "Rasing Z Up ...", false)	
   });
 
