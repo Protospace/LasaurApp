@@ -181,7 +181,7 @@ $(document).ready(function(){
     send_gcode(gcode, "Rasing Z Up ...", false)	
   });
 
-  $('#reset_offset').click(function(e) {
+  $('#clear_offset').click(function(e) {
 	reset_offset();
   });
 
